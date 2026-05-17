@@ -1,28 +1,32 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
-import AppLayout from './components/AppLayout'
-import ProtectedRoute from './components/ProtectedRoute'
-import AuthPage from './pages/AuthPage'
-import HomePage from './pages/HomePage'
-import AboutPage from './pages/AboutPage'
-import './App.css'
+import { Navigate, Route, Routes } from 'react-router-dom';
+import AppShell from './components/AppShell.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import Capture from './pages/Capture.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import Login from './pages/Login.jsx';
+import Recommendations from './pages/Recommendations.jsx';
+import Register from './pages/Register.jsx';
 
-function App() {
+export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/home" replace />} />
-      <Route path="/login" element={<AuthPage mode="login" />} />
-      <Route path="/register" element={<AuthPage mode="register" />} />
-
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-        </Route>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route
+        path="/"
+        element={(
+          <ProtectedRoute>
+            <AppShell />
+          </ProtectedRoute>
+        )}
+      >
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="capture" element={<Capture />} />
+        <Route path="recommendations" element={<Recommendations />} />
       </Route>
-
-      <Route path="*" element={<Navigate to="/home" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
-  )
+  );
 }
 
-export default App

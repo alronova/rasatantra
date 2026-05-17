@@ -1,17 +1,11 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+import { Navigate, useLocation } from 'react-router-dom';
+import { getToken } from '../api/client.js';
 
-export default function ProtectedRoute() {
-  const { isAuthenticated, isLoading } = useAuth()
-  const location = useLocation()
-
-  if (isLoading) {
-    return <div className="page-shell centered">Checking session...</div>
+export default function ProtectedRoute({ children }) {
+  const location = useLocation();
+  if (!getToken()) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />
-  }
-
-  return <Outlet />
+  return children;
 }
+
