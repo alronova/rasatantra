@@ -4,6 +4,9 @@ __pycache__/
 .venv/
 .pytest_cache/
 
+# Local Files
+*.local
+
 # Environment files
 .env
 

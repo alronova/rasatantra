@@ -519,6 +519,12 @@
   border-radius: var(--radius);
 }
 
+.video-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .video-frame iframe {
   width: 100%;
   height: 100%;

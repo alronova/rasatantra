@@ -1,7 +1,3 @@
-function firstPlayableLink(links) {
-  return [...(links?.vocal || []), ...(links?.instrumental || [])][0] || '';
-}
-
 function toEmbedUrl(url) {
   try {
     const parsed = new URL(url);
@@ -20,8 +16,10 @@ function toEmbedUrl(url) {
 }
 
 export default function RagaCard({ recommendation, index }) {
-  const firstLink = firstPlayableLink(recommendation.youtube_links);
-  const embedUrl = toEmbedUrl(firstLink);
+  const allLinks = [
+    ...(recommendation.youtube_links?.vocal || []),
+    ...(recommendation.youtube_links?.instrumental || []),
+  ];
 
   return (
     <article className="raga-card">
@@ -43,25 +41,21 @@ export default function RagaCard({ recommendation, index }) {
         <span>Ritu {recommendation.ritu_score}</span>
       </div>
 
-      {embedUrl ? (
-        <div className="video-frame">
-          <iframe
-            src={embedUrl}
-            title={`${recommendation.raga_name} performance`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      ) : null}
-
-      <div className="link-list">
-        {[...(recommendation.youtube_links?.vocal || []), ...(recommendation.youtube_links?.instrumental || [])]
-          .slice(0, 4)
-          .map((link) => (
-            <a href={link} target="_blank" rel="noreferrer" key={link}>
-              YouTube
-            </a>
-          ))}
+      <div className="video-column">
+        {allLinks.map((link, idx) => {
+          const embedUrl = toEmbedUrl(link);
+          if (!embedUrl) return null;
+          return (
+            <div className="video-frame" key={`${link}-${idx}`}>
+              <iframe
+                src={embedUrl}
+                title={`${recommendation.raga_name} performance ${idx + 1}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          );
+        })}
       </div>
     </article>
   );
