@@ -1,4 +1,4 @@
-import { LogOut, Music2 } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { clearSession, getUser } from '../api/client.js';
 
@@ -15,10 +15,12 @@ export default function AppShell() {
     <div className="app-shell">
       <header className="topbar">
         <button className="brand-button" type="button" onClick={() => navigate('/dashboard')}>
-          <span className="brand-mark"><Music2 size={22} /></span>
+          <span className="brand-mark">
+            <img src="/icon.png" alt="" />
+          </span>
           <span>
-            <span className="brand-title">Rasatantra</span>
-            <span className="brand-subtitle">Navarasa guided listening</span>
+            <span className="brand-title">Raag Ratnakar</span>
+            <span className="brand-subtitle">Where Every Mood Finds a Raga</span>
           </span>
         </button>
         <div className="topbar-actions">
@@ -34,4 +36,3 @@ export default function AppShell() {
     </div>
   );
 }
-
