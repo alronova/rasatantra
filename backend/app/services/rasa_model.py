@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO, Mapping
 
 from app.config import settings
 
@@ -18,6 +18,24 @@ DEFAULT_CLASS_NAMES = [
     "veer",
 ]
 
+RASA_LABEL_ALIASES = {
+    "adhbut": "adhbuta",
+    "adhbuta": "adhbuta",
+    "adbhuta": "adhbuta",
+    "bhayank": "bhayanak",
+    "bhayanak": "bhayanak",
+    "bhibhatsa": "bhibhatsa",
+    "bibhatsa": "bhibhatsa",
+    "hasya": "hasya",
+    "karuna": "karuna",
+    "raudra": "raudra",
+    "shanta": "shanta",
+    "shringara": "shringara",
+    "sringara": "shringara",
+    "veer": "veer",
+    "vira": "veer",
+}
+
 
 class RasaModelError(RuntimeError):
     """Raised when model dependencies or weights are unavailable."""
@@ -28,6 +46,44 @@ class RasaPrediction:
     rasa: str
     confidence: float
     probabilities: dict[str, float]
+
+
+def normalize_rasa_label(label: str) -> str:
+    normalized = label.strip().lower()
+    normalized = normalized.split("(", maxsplit=1)[0].strip()
+    normalized = normalized.replace("-", "_").replace(" ", "_")
+    normalized = normalized.removesuffix("_rasa")
+    compact = normalized.replace("_", "")
+    canonical = RASA_LABEL_ALIASES.get(compact)
+    if canonical is None:
+        raise RasaModelError(f"Unsupported rasa label in checkpoint: {label!r}")
+    return canonical
+
+
+def normalize_class_names(class_names: Any) -> list[str]:
+    if not isinstance(class_names, (list, tuple)):
+        raise RasaModelError("Checkpoint class_names must be a list or tuple.")
+
+    normalized = [normalize_rasa_label(str(name)) for name in class_names]
+    if len(normalized) != len(DEFAULT_CLASS_NAMES):
+        raise RasaModelError(
+            f"Checkpoint defines {len(normalized)} classes, expected {len(DEFAULT_CLASS_NAMES)}."
+        )
+    if len(set(normalized)) != len(normalized):
+        raise RasaModelError("Checkpoint class_names contain duplicate rasa labels after normalization.")
+    return normalized
+
+
+def _checkpoint_output_size(state_dict: Mapping[str, Any]) -> int | None:
+    bias = state_dict.get("classifier.4.bias")
+    if bias is not None and hasattr(bias, "shape") and len(bias.shape) >= 1:
+        return int(bias.shape[0])
+
+    weight = state_dict.get("classifier.4.weight")
+    if weight is not None and hasattr(weight, "shape") and len(weight.shape) >= 1:
+        return int(weight.shape[0])
+
+    return None
 
 
 class RasaPredictor:
@@ -75,9 +131,16 @@ class RasaPredictor:
         if state_dict is None:
             raise RasaModelError("Checkpoint does not contain model weights.")
 
+        output_size = _checkpoint_output_size(state_dict)
+        if output_size is not None and output_size != len(DEFAULT_CLASS_NAMES):
+            raise RasaModelError(
+                f"Checkpoint classifier outputs {output_size} classes, expected {len(DEFAULT_CLASS_NAMES)}."
+            )
+
         class_names = checkpoint.get("class_names") if isinstance(checkpoint, dict) else None
-        if class_names:
-            self._class_names = [str(name) for name in class_names]
+        self._class_names = normalize_class_names(
+            DEFAULT_CLASS_NAMES if class_names is None else class_names
+        )
 
         model.load_state_dict(state_dict)
         model.to(device)
